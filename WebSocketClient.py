@@ -2,6 +2,7 @@ import argparse
 import json
 import uuid
 from argparse import Namespace
+from datetime import datetime
 
 from autobahn.twisted.websocket import WebSocketClientProtocol, \
     WebSocketClientFactory, connectWS
@@ -15,6 +16,7 @@ from FIXPMsgUtil import FIXPMsgUtil
 class IGUSPreTradeWebSocketClientProtocol(WebSocketClientProtocol):
     clientOrderIdCounter: int = 0
     securityListRequestCounter: int = 0
+    isShuttingDown: bool = False
 
     receivedQuoteCounter: int = 0
     heartBeatInterval: int = 3
@@ -54,7 +56,9 @@ class IGUSPreTradeWebSocketClientProtocol(WebSocketClientProtocol):
             if msg_type == "ExecutionReport":
                 print("EstablishmentReject message received : Stopping")
                 # TODO close WebSocket "cleanly"
-                reactor.stop()
+                if not self.isShuttingDown:
+                    self.isShuttingDown = True
+                    reactor.stop()
             # FIXP message types follow
             elif msg_type == "UnsequencedHeartbeat":
                 self.send_heartbeat()
@@ -64,7 +68,13 @@ class IGUSPreTradeWebSocketClientProtocol(WebSocketClientProtocol):
             elif msg_type == "EstablishmentAck":
                 # Session established, get list of securities
                 self.factory.reactor.callLater(self.heartBeatInterval, self.send_heartbeat)
-                self.send_new_order_single("CS.D.NOKJPY.CZD.IP")
+                self.send_new_order_single(account=self.factory.params['accountID'],
+                                           security_id="CS.D.EURGBP.CZD.IP",
+                                           currency="GBP",
+                                           side="Buy",
+                                           order_qty="1",
+                                           ord_typ="Market",
+                                           time_in_force="ImmediateOrCancel")
             elif msg_type == "EstablishmentReject":
                 print("EstablishmentReject message received : Stopping")
                 # TODO close WebSocket "cleanly"
@@ -90,23 +100,16 @@ class IGUSPreTradeWebSocketClientProtocol(WebSocketClientProtocol):
     def send_establish_msg(self):
         self.dispatch(FIXPMsgUtil.create_establish_msg(self.sessionId, self.heartBeatInterval))
 
-    def send_new_order_single(self, security_id: str):
+    def send_new_order_single(self, account: str, security_id: str, currency: str, side:str, order_qty:str, ord_typ:str, time_in_force:str):
         self.clientOrderIdCounter += 1
-        account = self.factory.params['userName']
-        security_id = security_id
-        side = "Buy"
-        order_qty = "1"
-        ord_typ = "Market"
-        currency = "USD"
-        time_in_force = "FillOrKill"
-        self.dispatch(ApplicationMsgUtil.create_new_single_order(account="Z33UVI",
-                                                                 security_id="CS.D.NOKJPY.CZD.IP",
-                                                                 side="Buy",
-                                                                 order_qty="1",
-                                                                 ord_typ="Market",
-                                                                 currency="USD",
-                                                                 time_in_force="FillOrKill",
-                                                                 client_order_id="{0}".format(self.clientOrderIdCounter)))
+        self.dispatch(ApplicationMsgUtil.create_new_single_order(account=account,
+                                                                 security_id=security_id,
+                                                                 side=side,
+                                                                 order_qty=order_qty,
+                                                                 ord_typ=ord_typ,
+                                                                 currency=currency,
+                                                                 time_in_force=time_in_force,
+                                                                 client_order_id=f"{self.clientOrderIdCounter}-{datetime.now().timestamp()}"))
 
 
 if __name__ == '__main__':
