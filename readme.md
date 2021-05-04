@@ -10,12 +10,11 @@ It is not production quality code.
 
 The example negotiates and establishes a FIXP session and then places a New Order Single.
 
-
 To run the example an [IG US](https://www.ig.com/us/welcome-page) Demo environment Username and Password are required. Open an account [here](https://www.ig.com/us/application-form).
 
-[Introduction to the IG US WebSocket API](https://github.com/IG-Group/ig-orchestrations/blob/master/ig-us-rfed/document/websocket/websocketAPI.md)
+[Introduction to the IG US WebSocket API](https://github.com/IG-Group/ig-orchestrations/blob/master/ig-us-rfed/document/document-websocket/markdown/websocketAPI.md)
 
-[IG US WebSocket PreTrade API](https://github.com/IG-Group/ig-orchestrations/blob/master/ig-us-rfed/document/websocket/websocketPreTradeAPI.md)
+[IG US WebSocket Trade API](https://github.com/IG-Group/ig-orchestrations/blob/master/ig-us-rfed/document/document-websocket/markdown/websocketTradeAPI.md)
 
 ## How to run the example
 
